@@ -1,5 +1,5 @@
 module MockTree (
-  Tree,
+  Tree(..),
   singleton,
   treeInsert,
   treeElem
