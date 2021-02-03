@@ -1,6 +1,9 @@
 dist
 dist-*
 cabal-dev
+*
+!/**/
+!*.*
 *.o
 *.hi
 *.hie
