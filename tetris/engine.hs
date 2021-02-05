@@ -5,9 +5,10 @@ module Engine (
 
 import Block
 import Board
+import Data.Maybe
 
 data State = MOVE | NEW | DONE
-data GameState = GameState {board :: Board, state :: State, block :: Block}
+data GameState = GameState {board :: Board, state :: State, block :: Maybe Block}
 
 render :: Board -> IO()
 render board = do
@@ -24,50 +25,61 @@ implantCoord cell board (x, y) = top ++ [_mid_] ++ bottom
 implantMovingBlock :: Block -> Board -> Board
 implantMovingBlock block board = foldl (implantCoord Moving) board $ block2coords block
 
+rootMovingBlock :: Board -> Board
+rootMovingBlock = (map.map) root
+                where
+                    root cell = if cell == Moving then Occupied else cell
+
 uprootMovingBlock :: Board -> Board
 uprootMovingBlock = (map.map) uproot
                 where
                     uproot cell = if cell == Moving then Empty else cell
 
+
+collideAt :: Block -> Board -> Cell -> Bool
+collideAt block board celltype = any (\coord@(x,y) -> board !! y !! x == celltype) $ block2coords block
+
+collideAtWall :: Block -> Board -> Bool
+collideAtWall block board = any (collideAt block board) [Wall, Floor]
+
 startgame :: IO()
 startgame = do
-    let game = GameState initboard NEW NONE
+    let game = GameState initboard NEW Nothing 
     rungame game
     return ()
 
 
 rungame :: GameState -> IO()
 rungame game = do
+    let pBoard = board game
+        _Board = uprootMovingBlock pBoard
     render $ board game
     case state game of
                 NEW -> do
-                    let pBoard = board game
-                        nBlock = genblock
+                    shape <- randomShape
+                    let nBlock = genblock shape
                         nBoard = implantMovingBlock nBlock pBoard
-                        nGameState = GameState nBoard MOVE nBlock
-                    render $ nBoard
-                    rungame nGameState
+                        nGameState = GameState nBoard MOVE (Just nBlock)
+                    -- render nBoard
+
+                    if collideAt nBlock _Board Occupied 
+                      then do
+                        render $ rootMovingBlock pBoard
+                        return ()
+                      else rungame nGameState
                 MOVE -> do
-                    let pBoard = board game
-                        pBlock = block game
+                    let pBlock = fromJust (block game)
                         nCoord@(nx, ny) = getCoord pBlock
                         nBlock = pBlock {coord = (nx, ny+1)}
-                        nBoard = implantMovingBlock nBlock $ uprootMovingBlock pBoard
-                        nGameState = GameState nBoard MOVE nBlock
-                    render $ nBoard
-                    if ny > 30 then return () else rungame nGameState
-
-    -- -- initial
-    -- let state1 = board game
-    -- render state1
-
-    -- -- new
-    -- let nb = genblock 
-    --     state2 = implantMovingBlock nb state1
-    -- render state2
-    
-    -- -- gravity
-    -- let state3 = uprootMovingBlock state2
-    -- let nCoord@(nx, ny) = getCoord nb
-    --     state4 = implantMovingBlock nb {coord = (nx, ny+1)} state3
-    -- render state4
+                    -- render nBoard
+                    if collideAtWall nBlock _Board || collideAt nBlock _Board Occupied 
+                      then do
+                        putStrLn "Colide"
+                        let nBoard = rootMovingBlock pBoard
+                            nGameState = GameState nBoard NEW Nothing
+                        rungame nGameState
+                      else do
+                        putStrLn "Moving"
+                        let nBoard = implantMovingBlock nBlock _Board
+                            nGameState = GameState nBoard MOVE (Just nBlock)
+                        rungame nGameState
