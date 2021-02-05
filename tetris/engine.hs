@@ -7,7 +7,17 @@ import Block
 import Board
 import Data.Maybe
 
-data State = MOVE | NEW | DONE
+import qualified System.Process as SP
+import System.Console.ANSI
+
+
+clearScreen :: IO ()
+clearScreen = do
+  _ <- SP.system "reset"
+  return ()
+
+
+data State = STAY | MOVE | NEW | DONE
 data GameState = GameState {board :: Board, state :: State, block :: Maybe Block}
 
 render :: Board -> IO()
@@ -45,41 +55,46 @@ collideAtWall block board = any (collideAt block board) [Wall, Floor]
 startgame :: IO()
 startgame = do
     let game = GameState initboard NEW Nothing 
-    rungame game
+    rungame game 0 
     return ()
 
-
-rungame :: GameState -> IO()
-rungame game = do
+rungame :: GameState -> Int -> IO()
+rungame game nonce = do
     let pBoard = board game
         _Board = uprootMovingBlock pBoard
+    setCursorPosition 0 0
     render $ board game
     case state game of
                 NEW -> do
                     shape <- randomShape
                     let nBlock = genblock shape
                         nBoard = implantMovingBlock nBlock pBoard
-                        nGameState = GameState nBoard MOVE (Just nBlock)
-                    -- render nBoard
+                        nGameState = GameState nBoard STAY (Just nBlock)
 
                     if collideAt nBlock _Board Occupied 
                       then do
-                        render $ rootMovingBlock pBoard
+                        setCursorPosition 0 0
+                        render $ rootMovingBlock nBoard
                         return ()
-                      else rungame nGameState
+                      else rungame nGameState (nonce + 1)
                 MOVE -> do
                     let pBlock = fromJust (block game)
                         nCoord@(nx, ny) = getCoord pBlock
                         nBlock = pBlock {coord = (nx, ny+1)}
-                    -- render nBoard
                     if collideAtWall nBlock _Board || collideAt nBlock _Board Occupied 
                       then do
-                        putStrLn "Colide"
                         let nBoard = rootMovingBlock pBoard
                             nGameState = GameState nBoard NEW Nothing
-                        rungame nGameState
+                        rungame nGameState 0
                       else do
-                        putStrLn "Moving"
                         let nBoard = implantMovingBlock nBlock _Board
                             nGameState = GameState nBoard MOVE (Just nBlock)
-                        rungame nGameState
+                        rungame nGameState 0
+                STAY -> 
+                  if nonce < 20
+                  then do
+                    let nGameState = GameState pBoard STAY $ block game
+                    rungame nGameState (nonce + 1)
+                  else do
+                    let nGameState = GameState pBoard MOVE $ block game
+                    rungame nGameState 0
