@@ -23,11 +23,9 @@ instance Show Cell where
   show Floor = "─"
   show Empty = " "
 
--- 10 * cell + 2 * wall
 width :: Int
 width = 15
 
--- 20 * cell + celling + floor
 height :: Int
 height = 20
 
