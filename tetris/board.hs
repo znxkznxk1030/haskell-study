@@ -3,7 +3,9 @@ module Board (
   Row,
   Board,
   initboard,
-  showBoard
+  showBoard,
+  width,
+  height
 ) where
 
 import Data.List
@@ -14,7 +16,7 @@ type Row = [Cell]
 type Board = [Row]
 
 instance Show Cell where
-  show Moving = "■"
+  show Moving = "□"
   show Occupied = "■"
   show Wall = "|"
   show Celling = "_"
