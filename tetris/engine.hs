@@ -4,12 +4,17 @@ module Engine (
 ) where
 
 import Block
+    ( Block(coord), genblock, randomShape, getCoord, block2coords )
 import Board
-import Data.Maybe
+    ( Board,
+      Cell(Occupied, Moving, Empty, Wall, Floor),
+      initboard,
+      showBoard )
+import Data.Maybe ( fromJust )
 
 import qualified System.Process as SP
-import System.Console.ANSI
-
+import System.Console.ANSI ( setCursorPosition )
+import UI.NCurses
 
 clearScreen :: IO ()
 clearScreen = do
@@ -88,10 +93,10 @@ rungame game nonce = do
                         rungame nGameState 0
                       else do
                         let nBoard = implantMovingBlock nBlock _Board
-                            nGameState = GameState nBoard MOVE (Just nBlock)
+                            nGameState = GameState nBoard STAY (Just nBlock)
                         rungame nGameState 0
                 STAY -> 
-                  if nonce < 20
+                  if nonce < 700
                   then do
                     let nGameState = GameState pBoard STAY $ block game
                     rungame nGameState (nonce + 1)
