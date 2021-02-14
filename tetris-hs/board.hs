@@ -4,6 +4,7 @@ module Board (
   Board,
   initboard,
   showBoard,
+  evalBoard,
   width,
   height
 ) where
@@ -29,8 +30,25 @@ width = 15
 height :: Int
 height = 20
 
+emptyRow :: Row
+emptyRow = [Wall] ++ replicate width Empty ++ [Wall]
+
+celling :: [Row]
+celling = [replicate (width + 2) Celling]
+
+ground :: [Row]
+ground = [replicate (width + 2) Floor]
+
 initboard :: Board
-initboard = [replicate (width + 2) Celling] ++ (replicate height  $ ([Wall] ++ replicate width Empty ++ [Wall])) ++ [replicate (width + 2) Floor]
+initboard = celling ++ (replicate height $ emptyRow) ++ ground
+
+evalBoard :: Board -> (Int, Board)
+evalBoard board = (count, nBoard)
+          where full line = all (\block -> Occupied == block || Wall == block || Celling == block || Floor == block) line
+                remained = filter (not.full) board
+                count = height - length remained
+                nBoard = celling ++ replicate count emptyRow ++ remained ++ ground
+
 
 showRow :: Row -> String
 showRow row = intercalate "" $ map show row
