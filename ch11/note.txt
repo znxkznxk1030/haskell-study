@@ -1,0 +1,68 @@
+11장 Applicative Functor
+
+Functor의 두 instance
+fmap & (->) r
+
+1. fmap
+fmap :: (a -> b) -> f a -> f a
+
+
+Functor 인 I/O 작업
+
+instance Functor IO where
+  fmap f action = do
+      result <- action
+      return (f result)
+
+
+// example fmap
+main = do line <- getLine
+          let line' = reverse line
+          putStrLn $ line'
+
+<=>
+
+
+main = do line <- fmap reverse getLine
+          putStrLn $ line
+
+만약 fmap이 IO에 한정된다면,
+  타입은 fmap :: (a -> b) -> IO a -> IO b 가 될 것이다.
+
+2. (->) r
+* (->) 는 Either 처럼 두개의 타입 매개변수를 받는 타입 생성자이다.
+* 하지만 타입생성자는 단 하나의 타입 매개변수만 받아야 하니 이것은 Functor의 인스턴스로 만들어질 수 있음을 기억하자.
+
+-- Control.Monad.Instance 에 있는 구현부
+instance Functor ((->) r) where
+  fmap f g = (\x -> f (g x))
+
+<=>
+
+instance Functor ((-> r)) where
+  fmap = (.)
+
+결국 fmap를 사용하면 합성함수가 된다.
+
+-- 이해를 돕기위해...
+fmap :: (a -> b) -> f a -> f b
+... f 를 (->) 로 치환해보면
+fmap :: (a -> b) -> ((-> r) a) -> ((-> r) b)
+... 중위법으로 치환
+fmap :: (a -> b) -> (r -> a) -> (r -> b)
+
+
+
+fmap을 생각하는 두가지 방법
+1. 함수와 펑터값을 받아서 그 펑터값에 그 함수를 매핑하는 함수
+2. 함수를 받아서 그 함수를 올리는 함수. 즉, 펑터값에서 동작한다.
+
+펑터규칙
+1. 펑터값에 id 함수를 매핑하면 돌려받은 펑터값은 원본 펑터값과 동일하다.
+** fmap id = id ** 
+
+2. 두개의 함수를 합한 다음에 합한 함수를 펑터에 매핑하는 것은 펑터에 하나의 함수를 먼저 매핑한 다음에 다른 함수를 매핑하는 것과 동일해야 한다는 것이다.
+** fmap (f . g) = fmap f . fmap g **
+
+
+
