@@ -1,5 +1,3 @@
-11장 Applicative Functor
-
 Functor의 두 instance
 fmap & (->) r
 

@@ -1,0 +1,41 @@
+Applicative Functor
+
+fmap (*) (Just 3)
+=> Just ((*) 3) 이런식으로 Just로 감싸진 함수를 얻을수 있다
+
+let a = fmap (*) [1..4]
+fmap (\f -> f 9) a
+[9, 18, 27, 36]
+
+이와 같이 사용할 수 있다.
+
+하지만 펑터값 안에 있는 함수를 fmap이 우리에게 제공하는 또 다른 펑터에게 매핑할 수는 없다.
+
+class (Functor f) => Applicative f where
+  pure :: a -> f a
+  (<*>) :: f (a -> b) -> f a -> f b
+
+instance Applicative Maybe where
+  pure = Just
+  Nothing <*> _ = Nothing
+  (Just f) <*> something = fmap f something
+
+
+pure (+) <*> Just 3 <*> Just 5
+=> pure는 디폴트 컨텍스트에 값을 넣는다.
+만약 디폴트 컨텍스트에 함수를 넣고 추출하여 다른 어플리커티브 펑터 안에 있는 값에 적용한다면,
+그 어플리커티브 펑터에 그 함수를 매핑하는 것과 같다
+
+즉, pure f <*> x <*> y 는 fmap f x <*> y 와 같다
+이때 fmap을 더 쿨하게 사용하기 위해서, Control.Applicative에서는 fmap의 중위 연산자인 <$> 를 제공한다.
+
+(<$>) :: (Functor f) => (a -> b) -> f a -> f b
+f <$> x = fmap f x
+
+
+==> f <$> x <*> y
+
+
+
+
+
